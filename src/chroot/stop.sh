@@ -1,0 +1,14 @@
+use box::mount;
+function chroot::stop() {
+	# Kill all running programs under chroot
+	local _chroot_pids _pid;
+	mapfile -t _chroot_pids < <(busybox lsof | grep "$_distro_root" \
+		| awk '{print $1}' | uniq || true);
+
+	for _pid in "${_chroot_pids[@]}"; do {
+		kill -9 "$_pid"
+	} done
+
+	# Unload all mountpoints
+	mount::umountTree "$_distro_root";
+}
