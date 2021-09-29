@@ -44,9 +44,31 @@ function chroot::start() {
 
 	# Start chroot shell or components when specified
 	if test -n "${COMPONENTS:-}"; then {
-		true
-	} else {
-		chroot::run_prog /bin/bash -l || true;
+		local _component;
+		for _component in $COMPONENTS; do {
+			case "$_component" in
+				ssh)
+					# Configure
+					local sshd_config
+					sshd_config="$_distro_root/etc/ssh/sshd_config"
+					sed -i -E 's/#?PasswordAuthentication .*/PasswordAuthentication yes/g' "${sshd_config}"
+					sed -i -E 's/#?PermitRootLogin .*/PermitRootLogin yes/g' "${sshd_config}"
+					sed -i -E 's/#?AcceptEnv .*/AcceptEnv LANG/g' "${sshd_config}"
+ 
+					    mkdir -p "$_distro_root/run/sshd" "$_distro_root/var/run/sshd";
+					    # generate keys
+					    if [ $(ls "${_distro_root}/etc/ssh/" | grep -c key) -eq 0 ]; then
+					        chroot::run_prog ssh-keygen -A >/dev/null
+					    fi
+					    # exec sshd
+					    chroot::run_prog sh -c '$(which sshd) -p 22';
+				    ;;
+			    	x11)
+					CUSER=axon chroot::run_prog sh -c '$HOME/.xinitrc &';
+			esac
+		} done 
+#	} else {
+#		chroot::run_prog /bin/bash -l || true;
 	} fi
 }
 

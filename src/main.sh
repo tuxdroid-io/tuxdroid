@@ -1,3 +1,4 @@
+use std::print::log;
 use chroot;
 # TODO: Add starting ssh, x11, vnc
 # TODO: Re-execute self as root1 namespace if not so. (nsenter)
@@ -60,7 +61,6 @@ function main() {
 		;;
 		enter-shell)
 			enter::ns_one "$@";
-			echo "$@"
 			parse_arg "$@";
 			chroot::enter_shell;
 		;;

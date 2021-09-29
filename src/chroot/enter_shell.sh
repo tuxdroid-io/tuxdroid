@@ -1,4 +1,5 @@
 use start;
+use box::user;
 use run_prog;
 function chroot::enter_shell() {
 
@@ -10,5 +11,5 @@ function chroot::enter_shell() {
 		} fi
 	} done
 
-	chroot::run_prog /bin/bash -l || true;
+	chroot::run_prog /bin/bash -l || log::warn "Container environment shell exited with error code $?";
 }

@@ -6,7 +6,8 @@ function chroot::stop() {
 		| awk '{print $1}' | uniq || true);
 
 	for _pid in "${_chroot_pids[@]}"; do {
-		kill -9 "$_pid"
+		log::info "Killing $_pid";
+		kill -9 "$_pid";
 	} done
 
 	# Unload all mountpoints
