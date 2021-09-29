@@ -15,18 +15,25 @@ function chroot::start() {
 	mount -o remount,dev,exec,suid "$_distro_root";
 
 	# Linux mountpoints
-	mount -t proc proc "$_distro_root/proc";
-	mount -t sysfs sys "$_distro_root/sys";
-	mount --rbind /dev "$_distro_root/dev" && \
+
+	log::info "Mounting /proc" && mount -t proc proc "$_distro_root/proc";
+	log::info "Mounting /sys" && mount -t sysfs sys "$_distro_root/sys";
+	log::info "Binding /dev" && mount --bind /dev "$_distro_root/dev" && \
 		ensure::devNodes;
 	if ! mountpoint -q "$_distro_root/dev/shm" 2>/dev/null; then {
+		log::info "Creating /dev/shm";
 		mkdir -p -m 1777 "$_distro_root/dev/shm" && \
-			mount -o rw,nosuid,nodev,mode=1777 -t tmpfs tmpfs /dev/shm;
+			mount -o rw,nosuid,nodev,mode=1777 -t tmpfs shm "$_distro_root/dev/shm";
 	} fi
 	if ! mountpoint -q "$_distro_root/dev/pts" 2>/dev/null; then {
-		mkdir -p "$_distro_root/dev/pts" && \
-			mount -o rw,nosuid,noexec,gid=5,mode=620,ptmxmode=000 \
-			-t devpts devpts /dev/pts;
+		log::info "Creating /dev/pts";
+		if mountpoint -q /dev/pts 2>/dev/null; then {
+			mount --bind /dev/pts "$_distro_root/dev/pts";
+		} else {
+			mkdir -p "$_distro_root/dev/pts" && \
+				mount -o rw,nosuid,noexec,gid=5,mode=620,ptmxmode=000 \
+				-t devpts devpts "$_distro_root/dev/pts";
+		} fi
 	} fi
 
 	# Setup /tmp
@@ -48,6 +55,7 @@ function chroot::start() {
 		for _component in $COMPONENTS; do {
 			case "$_component" in
 				ssh)
+					log::info "Starting ssh daemon";
 					# Configure
 					local sshd_config
 					sshd_config="$_distro_root/etc/ssh/sshd_config"
@@ -64,7 +72,8 @@ function chroot::start() {
 					    chroot::run_prog sh -c '$(which sshd) -p 22';
 				    ;;
 			    	x11)
-					CUSER=axon chroot::run_prog sh -c '$HOME/.xinitrc &';
+					log::info "Starting X11 ~/.xinitrc";
+					CUSER=axon chroot::run_prog sh -c 'DISPLAY=:0 $HOME/.xinitrc &';
 			esac
 		} done 
 #	} else {

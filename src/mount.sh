@@ -3,16 +3,19 @@ function mount::umountTree() {
 	local _mountpoint;
 	local _mountdump;
 	log::info "Cleanly unmounting if necessary";
-	_mountdump="$(mount | grep "$_tree" || true)";
+	_mountdump="$(grep "$_tree" /proc/mounts || true)";
 	if test -n "$_mountdump"; then {
-		mapfile -t _mountpoints < <(echo "$_mountdump" | awk -F ' on ' '{print $2}' | awk '{print $1}' | tac);
+		mapfile -t _mountpoints < <(echo "$_mountdump" | awk '{print $2}' | grep '^/.*' | tac);
 
 		for _mountpoint in "${_mountpoints[@]}"; do
-			if mountpoint -q "$_mountpoint"; then {
+			while mountpoint -q "$_mountpoint"; do {
 				log::info "Unmounting $_mountpoint";
-				umount -f "$_mountpoint";
-			} fi
+				umount -df "$_mountpoint";
+			} done
 		done
+		while grep -q "$_tree" /proc/mounts; do {
+			umount -df "$_tree";
+		} done
 	} fi
 }
 

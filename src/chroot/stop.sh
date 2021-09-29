@@ -12,4 +12,8 @@ function chroot::stop() {
 
 	# Unload all mountpoints
 	mount::umountTree "$_distro_root";
+
+#	if ! mountpoint -q /dev/shm 2>/dev/null; then {
+#		rmdir /dev/shm 2>/dev/null || true;
+#	} fi
 }
