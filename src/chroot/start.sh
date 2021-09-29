@@ -19,11 +19,11 @@ function chroot::start() {
 	mount -t sysfs sys "$_distro_root/sys";
 	mount --rbind /dev "$_distro_root/dev" && \
 		ensure::devNodes;
-	if ! mountpoint -q "$_distro_root/dev/shm"; then {
+	if ! mountpoint -q "$_distro_root/dev/shm" 2>/dev/null; then {
 		mkdir -p -m 1777 "$_distro_root/dev/shm" && \
 			mount -o rw,nosuid,nodev,mode=1777 -t tmpfs tmpfs /dev/shm;
 	} fi
-	if ! mountpoint -q "$_distro_root/dev/pts"; then {
+	if ! mountpoint -q "$_distro_root/dev/pts" 2>/dev/null; then {
 		mkdir -p "$_distro_root/dev/pts" && \
 			mount -o rw,nosuid,noexec,gid=5,mode=620,ptmxmode=000 \
 			-t devpts devpts /dev/pts;
