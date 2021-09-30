@@ -1,5 +1,6 @@
 use std::print::log;
 use chroot;
+use configure;
 # TODO: Add starting ssh, x11, vnc
 # TODO: Re-execute self as root1 namespace if not so. (nsenter)
 
@@ -17,7 +18,6 @@ function enter::ns_one() {
 
 	if test "$(ns::cut_id "$(readlink -f /proc/1/ns/mnt)")" != \
 		"$(ns::cut_id "$(readlink -f /proc/self/ns/mnt)")"; then {
-		echo ns;
 		export NS_ONE=true;
 		exec nsenter -t 1 "$0" "$@";
 
@@ -64,6 +64,13 @@ function main() {
 			parse_arg "$@";
 			chroot::enter_shell;
 		;;
+		configure)
+			enter::ns_one "$@";
+			parse_arg "$@";
+			chroot::start;
+			distro::configure;
+
+
 	esac
 }
 

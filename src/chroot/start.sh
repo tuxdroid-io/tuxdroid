@@ -36,6 +36,10 @@ function chroot::start() {
 		} fi
 	} fi
 
+	# User mountpoints
+	mkdir -p "$_distro_root/home/axon/Common";
+	mount --bind /data/linux/common "$_distro_root/home/axon/Common";
+
 	# Setup /tmp
 	rm -rf "$_distro_root/tmp" && \
 		mkdir -m 0777 -p "$_distro_root/tmp" && \
@@ -47,8 +51,10 @@ function chroot::start() {
 	for _dns in "1.1.1.1" "1.0.0.1"; do
 		echo "nameserver $_dns" >> "$_resolv_conf"
 	done
-
-
+	if ! grep -q "^127.0.0.1" "$_distro_root/etc/hosts"; then
+		echo '127.0.0.1 localhost' >> "${_distro_root}/etc/hosts";
+	fi
+ 
 	# Start chroot shell or components when specified
 	if test -n "${COMPONENTS:-}"; then {
 		local _component;
