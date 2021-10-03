@@ -84,8 +84,8 @@ function chroot::start() {
 			    	x11)
 					log::info "Starting X11";
 					log::info "Waiting for X11 socket";
-					until ! ps -fA | grep -q \
-						'/data/data/x.org.server/.*xsel'; do {
+					until ps -fA | grep -v grep | grep -q \
+						'/x.org.server/.*/xsel'; do {
 						sleep 1;
 					} done
 					CUSER=axon chroot::run_prog sh -c 'DISPLAY=:0 $HOME/.xinitrc &';

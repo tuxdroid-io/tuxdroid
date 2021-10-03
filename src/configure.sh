@@ -79,6 +79,10 @@ function distro::configure() {
 
 	CUSER=root chroot::run_prog pacman -Syyuu --noconfirm --needed "${ARCHLINUX_PACKAGES[@]}";
 
+	# Fix some packages
+	chmod 4755 /usr/share/code/chrome-sandbox;
+
+
     log::info "Configuring LOCALE";
 	echo 'en_US.UTF-8 UTF-8' > "$_distro_root/etc/locale.gen";
 	echo 'LANG=en_US.UTF-8' > "$_distro_root/etc/locale.conf";
