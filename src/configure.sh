@@ -3,15 +3,37 @@ use chroot::run_prog;
 function distro::configure() {
 
 
-    local DISTRIB=archlinux;
+    : "${DISTRIB:="archlinux"}";
 
     # Install packages
     if test $DISTRIB == archlinux; then
-	    echo 'Server = http://mirror.xeonbd.com/manjaro/arm-stable/$repo/$arch' > "$_distro_root/etc/pacman.d/mirrorlist";
-	sed -i 's|^CheckSpace|#CheckSpace|' "$_distro_root/etc/pacman.conf";
-	
-	CUSER=root chroot::run_prog pacman-key --init
-	CUSER=root chroot::run_prog pacman-key --populate manjaro-arm archlinuxarm archlinux
+	    echo 'Server = http://sg.mirror.archlinuxarm.org/$arch/$repo' > "$_distro_root/etc/pacman.d/mirrorlist";
+    else
+	echo 'Server = http://mirror.xeonbd.com/manjaro/arm-stable/$repo/$arch' > "$_distro_root/etc/pacman.d/mirrorlist";
+    fi	
+    	local _key;
+	# Enable pacman stuff
+    	for _key in "DisableDownloadTimeout"; do {
+		if grep -q "^#${_key}" "$_distro_root/etc/pacman.conf"; then {
+			sed -i "s|^#${_key}|${_key}|" "$_distro_root/etc/pacman.conf";
+		} else {
+			sed -i "s|^\[options\]|\[options\]\n${_key}|" \
+				"$_distro_root/etc/pacman.conf";
+		} fi
+	} done
+	# Disable pacman stuff
+    	for _key in "CheckSpace"; do {
+		sed -i "s|^${_key}|#${_key}|" "$_distro_root/etc/pacman.conf";
+	} done
+
+	CUSER=root chroot::run_prog pacman-key --init;
+	local _keyring _found_keyring;
+	for _keyring in archlinuxarm archlinux manjaro-arm; do {
+		if test -e "$_distro_root/usr/share/pacman/keyrings/$_keyring"; then {
+			_found_keyring+=($_keyring);
+		} fi
+	} done
+	CUSER=root chroot::run_prog pacman-key --populate "${_found_keyring[@]}";
 
 	local ARCHLINUX_PACKAGES=(
 		sudo
@@ -29,7 +51,6 @@ function distro::configure() {
 		tree
 		lsof
 		wget
-		code
 		rsync
 		usbutils
 		git
@@ -46,13 +67,18 @@ function distro::configure() {
 		neofetch
 		busybox
 		fish
-		manjaro-release
+		code
+		feh
+		ranger
 		openssh
 		tigervnc
 	)
+	if test $DISTRIB == manjaro; then
+		ARCHLINUX_PACKAGES+=(manjaro-release);
+	fi
 
 	CUSER=root chroot::run_prog pacman -Syyuu --noconfirm --needed "${ARCHLINUX_PACKAGES[@]}";
-fi
+
     log::info "Configuring LOCALE";
 	echo 'en_US.UTF-8 UTF-8' > "$_distro_root/etc/locale.gen";
 	echo 'LANG=en_US.UTF-8' > "$_distro_root/etc/locale.conf";

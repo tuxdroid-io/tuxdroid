@@ -8,7 +8,8 @@ function mount::umountTree() {
 		mapfile -t _mountpoints < <(echo "$_mountdump" | awk '{print $2}' | grep '^/.*' | tac);
 
 		for _mountpoint in "${_mountpoints[@]}"; do
-			while mountpoint -q "$_mountpoint"; do {
+			while mountpoint -q "$_mountpoint" \
+			|| grep -q " ${_mountpoint} " /proc/mounts; do {
 				log::info "Unmounting $_mountpoint";
 				umount -df "$_mountpoint";
 			} done

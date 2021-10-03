@@ -11,8 +11,10 @@ function chroot::start() {
 	chroot::stop;
 
 	# Remount self with custom options
-	mount --bind "$_distro_root" "$_distro_root";
-	mount -o remount,dev,exec,suid "$_distro_root";
+	if test ! -v SUDID; then {
+		mount --bind "$_distro_root" "$_distro_root";
+		mount -o remount,dev,exec,suid "$_distro_root";
+	} fi
 
 	# Linux mountpoints
 
@@ -37,8 +39,10 @@ function chroot::start() {
 	} fi
 
 	# User mountpoints
-	mkdir -p "$_distro_root/home/axon/Common";
-	mount --bind /data/linux/common "$_distro_root/home/axon/Common";
+	if test -d "$_distro_root/home/axon"; then
+		mkdir -p "$_distro_root/home/axon/Common";
+		mount --bind /data/linux/common "$_distro_root/home/axon/Common";
+	fi
 
 	# Setup /tmp
 	rm -rf "$_distro_root/tmp" && \
@@ -78,7 +82,12 @@ function chroot::start() {
 					    chroot::run_prog sh -c '$(which sshd) -p 22';
 				    ;;
 			    	x11)
-					log::info "Starting X11 ~/.xinitrc";
+					log::info "Starting X11";
+					log::info "Waiting for X11 socket";
+					until ! ps -fA | grep -q \
+						'/data/data/x.org.server/.*xsel'; do {
+						sleep 1;
+					} done
 					CUSER=axon chroot::run_prog sh -c 'DISPLAY=:0 $HOME/.xinitrc &';
 			esac
 		} done 
