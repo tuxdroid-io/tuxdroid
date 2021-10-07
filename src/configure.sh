@@ -78,7 +78,7 @@ function distro::configure() {
 	fi
 
 	until CUSER=root chroot::run_prog pacman -Syyuu --noconfirm --needed "${ARCHLINUX_PACKAGES[@]}"; do {
-		CUSER=root chroot::run_prog pacman -Syyuu --noconfirm --needed "${ARCHLINUX_PACKAGES[@]}"
+		continue;
 	} done
 
 	# Fix some packages

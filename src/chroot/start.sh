@@ -91,6 +91,9 @@ function chroot::start() {
 						'/x.org.server/.*/xsel'; do {
 						sleep 1;
 					} done
+					# Note: No idea why XSDL spawns it's own xsel
+					pkill -9 xsel;
+
 					CUSER=axon chroot::run_prog sh -c 'cd && chmod +x .xinitrc && exec ./.xinitrc &';
 				;;
 				vnc)
