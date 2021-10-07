@@ -11,13 +11,16 @@ function chroot::start() {
 	chroot::stop;
 
 	# Remount self with custom options
-	if test ! -v SUDID; then {
+	if grep -qE '/dev/block/.* /data .*nosuid|/dev/block/.* /data .*nodev|/dev/block/.* /data .*noexec' /proc/mounts; then {
+		mount -oremount,suid,dev,exec /data && SUID=true || log::warn "Tried to remount as suid but failed, so continuing..." && {
 		mount --bind "$_distro_root" "$_distro_root";
 		mount -o remount,dev,exec,suid "$_distro_root";
+
+	 }
 	} fi
 
-	# Linux mountpoints
 
+	# Linux mountpoints
 	log::info "Mounting /proc" && mount -t proc proc "$_distro_root/proc";
 	log::info "Mounting /sys" && mount -t sysfs sys "$_distro_root/sys";
 	log::info "Binding /dev" && mount --bind /dev "$_distro_root/dev" && \
@@ -88,7 +91,13 @@ function chroot::start() {
 						'/x.org.server/.*/xsel'; do {
 						sleep 1;
 					} done
-					CUSER=axon chroot::run_prog sh -c 'DISPLAY=:0 $HOME/.xinitrc &';
+					CUSER=axon chroot::run_prog sh -c 'cd $HOME && DISPLAY=:0 exec $HOME/.xinitrc &';
+				;;
+				vnc)
+					log::info "Starting VNC";
+					CUSER=axon chroot::run_prog sh -c '{ exec vncserver ${1:-":0"} 2>&1; } > "$HOME/.vnc/server.log" 2>&1 &';
+
+
 			esac
 		} done 
 #	} else {

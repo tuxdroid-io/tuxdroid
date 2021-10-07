@@ -77,10 +77,12 @@ function distro::configure() {
 		ARCHLINUX_PACKAGES+=(manjaro-release);
 	fi
 
-	CUSER=root chroot::run_prog pacman -Syyuu --noconfirm --needed "${ARCHLINUX_PACKAGES[@]}";
+	until CUSER=root chroot::run_prog pacman -Syyuu --noconfirm --needed "${ARCHLINUX_PACKAGES[@]}"; do {
+		CUSER=root chroot::run_prog pacman -Syyuu --noconfirm --needed "${ARCHLINUX_PACKAGES[@]}"
+	} done
 
 	# Fix some packages
-	chmod 4755 /usr/share/code/chrome-sandbox;
+	CUSER=root chroot::run_prog chmod -f 4755 /usr/share/code/chrome-sandbox;
 
 
     log::info "Configuring LOCALE";

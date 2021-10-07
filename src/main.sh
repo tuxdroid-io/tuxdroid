@@ -7,11 +7,6 @@ use configure;
 function enter::ns_one() {
 	
 
-	if grep -qE '/dev/block/.* /data .*nosuid|/dev/block/.* /data .*nodev|/dev/block/.* /data .*noexec' /proc/mounts; then {
-		mount -oremount,suid,dev,exec /data && SUID=true && return \
-			|| log::warn "Tried to remount as suid but failed, so continuing...";
-	} fi
-
 	if test "${NS_ONE:-}" == "true"; then {
 		return 0
 	} fi
