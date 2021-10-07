@@ -91,11 +91,11 @@ function chroot::start() {
 						'/x.org.server/.*/xsel'; do {
 						sleep 1;
 					} done
-					CUSER=axon chroot::run_prog sh -c 'cd $HOME && DISPLAY=:0 exec $HOME/.xinitrc &';
+					CUSER=axon chroot::run_prog sh -c 'cd && chmod +x .xinitrc && exec ./.xinitrc &';
 				;;
 				vnc)
 					log::info "Starting VNC";
-					CUSER=axon chroot::run_prog sh -c '{ exec vncserver ${1:-":0"} 2>&1; } > "$HOME/.vnc/server.log" 2>&1 &';
+					CUSER=axon chroot::run_prog sh -c '{ vncserver ${1:-":0"} 2>&1; } > "$HOME/.vnc/server.log" 2>&1 &';
 
 
 			esac
