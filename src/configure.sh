@@ -39,7 +39,7 @@ function distro::configure() {
 		sudo
 		xorg
 		xdg-utils
-		xdg-desktop-portal
+		#xdg-desktop-portal
 		gnome-keyring
 		python
 		base
@@ -72,6 +72,7 @@ function distro::configure() {
 		ranger
 		openssh
 		tigervnc
+		bash-completion
 	)
 	if test $DISTRIB == manjaro; then
 		ARCHLINUX_PACKAGES+=(manjaro-release);
@@ -83,6 +84,7 @@ function distro::configure() {
 
 	# Fix some packages
 	CUSER=root chroot::run_prog chmod -f 4755 /usr/share/code/chrome-sandbox;
+	CUSER=root chroot::run_prog setcap -r /usr/bin/gnome-keyring-daemon;
 
 
     log::info "Configuring LOCALE";

@@ -6,9 +6,10 @@ use configure;
 
 function enter::ns_one() {
 	
+	#mkdir -p -m 0755 "$_distro_root";
 
 	if test "${NS_ONE:-}" == "true"; then {
-		return 0
+		return 0;
 	} fi
 
 	function ns::cut_id() {
@@ -19,6 +20,7 @@ function enter::ns_one() {
 
 	if test "$(ns::cut_id "$(readlink -f /proc/1/ns/mnt)")" != \
 		"$(ns::cut_id "$(readlink -f /proc/self/ns/mnt)")"; then {
+		log::info "Entering mount namespace of PID 1";
 		export NS_ONE=true;
 		exec nsenter -t 1 "$0" "$@";
 
@@ -28,6 +30,7 @@ function enter::ns_one() {
 
 function main() {
 	#local _orig_arg=("$@");
+	#_distro_root="/data/local/tuxdroid_mnt";
 	function parse_arg() {
 		local _arg;
 		for _arg in "$@"; do {

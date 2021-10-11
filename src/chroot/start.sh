@@ -1,5 +1,6 @@
 use box::ensure;
 use box::mount;
+use box::user;
 use run_prog;
 use stop;
 
@@ -12,12 +13,19 @@ function chroot::start() {
 
 	# Remount self with custom options
 	if grep -qE '/dev/block/.* /data .*nosuid|/dev/block/.* /data .*nodev|/dev/block/.* /data .*noexec' /proc/mounts; then {
-		mount -oremount,suid,dev,exec /data && SUID=true || log::warn "Tried to remount as suid but failed, so continuing..." && {
+		mount -oremount,suid,dev,exec /data || { log::warn "Tried to remount as suid but failed, so continuing..." && {
 		mount --bind "$_distro_root" "$_distro_root";
 		mount -o remount,dev,exec,suid "$_distro_root";
 
-	 }
+	  }
+ 	 }
 	} fi
+
+
+	#mount -o bind "$_distro_source" "$_distro_root";
+	#mount -o remount,dev,exec,suid "$_distro_root";
+
+
 
 
 	# Linux mountpoints
@@ -41,16 +49,18 @@ function chroot::start() {
 		} fi
 	} fi
 
+	if ! mountpoint -q "$_distro_root/tmp"; then {
+		rm -rf "$_distro_root/tmp";
+		mkdir -m 0777 -p "$_distro_root/tmp";
+		mount -t tmpfs tmpfs -omode=0777,nosuid,nodev "$_distro_root/tmp";
+		chmod +t "$_distro_root/tmp";
+	} fi
+
 	# User mountpoints
 	if test -d "$_distro_root/home/axon"; then
 		mkdir -p "$_distro_root/home/axon/Common";
 		mount --bind /data/linux/common "$_distro_root/home/axon/Common";
 	fi
-
-	# Setup /tmp
-	rm -rf "$_distro_root/tmp" && \
-		mkdir -m 0777 -p "$_distro_root/tmp" && \
-		chmod +t "$_distro_root/tmp";
 
 	# DNS
 	_resolv_conf="$_distro_root/etc/resolv.conf"
@@ -92,9 +102,8 @@ function chroot::start() {
 						sleep 1;
 					} done
 					# Note: No idea why XSDL spawns it's own xsel
-					pkill -9 xsel;
-
-					CUSER=axon chroot::run_prog sh -c 'cd && chmod +x .xinitrc && exec ./.xinitrc &';
+					#pkill -9 xsel;
+					{ CUSER=axon chroot::run_prog sh -i -c 'cd && chmod +x .xinitrc && exec $PWD/.xinitrc &' 2>&1; } > "$_distro_root$(user::get_home axon)/dbus.log" 2>&1;
 				;;
 				vnc)
 					log::info "Starting VNC";
