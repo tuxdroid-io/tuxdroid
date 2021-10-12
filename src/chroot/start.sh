@@ -107,7 +107,7 @@ function chroot::start() {
 				;;
 				vnc)
 					log::info "Starting VNC";
-					CUSER=axon chroot::run_prog sh -c '{ vncserver ${1:-":0"} 2>&1; } > "$HOME/.vnc/server.log" 2>&1 &';
+					{ CUSER=axon chroot::run_prog sh -i -c 'cd && chmod +x .xinitrc && exec vncserver :0 &' 2>&1; } > "$_distro_root$(user::get_home axon)/.vnc/server.log" 2>&1;
 
 
 			esac
