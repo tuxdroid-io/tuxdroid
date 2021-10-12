@@ -18,5 +18,9 @@ function ensure::devNodes() {
 		mkdir -p /dev/net
 		mknod /dev/net/tun c 10 200
         fi
+	if [ ! -e "/dev/loop0" ] \
+		&& [ -e "/dev/block/loop0" ]; then
+		ln -sf /dev/block/loop* /dev/
+	fi
 }
 
