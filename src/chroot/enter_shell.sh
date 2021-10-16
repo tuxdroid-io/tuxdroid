@@ -11,5 +11,5 @@ function chroot::enter_shell() {
 		} fi
 	} done
 
-chroot::run_prog sh -c "cd && $(user::get_shell ${CUSER:-root})" || log::warn "Container environment shell exited with error code $?";
+chroot::run_prog sh -c "cd && $(user::get_shell ${CUSER:-root}) -l" || log::warn "Container environment shell exited with error code $?";
 }
