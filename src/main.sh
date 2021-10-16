@@ -49,9 +49,12 @@ function main() {
 				;;
 				--distrib=*)
 					DISTRIB="${_arg##*=}";
-					shift
+					shift;
 				;;
-
+				--dry-run)
+					DRY_RUN=true;
+					shift;
+				;;
 			esac
 		} done
 

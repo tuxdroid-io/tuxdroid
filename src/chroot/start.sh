@@ -21,6 +21,17 @@ function chroot::start() {
  	 }
 	} fi
 
+	# Dry run stuff
+	if test "${DRY_RUN:-}" == true; then {
+		log::info "Initializing dry-run mode, happy experimenting!";
+		local _overlay_root="${_distro_root%/*}/.tuxdroid_overlay";
+		rm -rf "$_overlay_root";
+		mkdir -p -m 0755 "$_overlay_root/worker" "$_overlay_root/upper";
+		mount -t overlay overlay -o \
+			lowerdir="$_distro_root",upperdir="$_overlay_root/upper",workdir="$_overlay_root/worker" "$_distro_root";
+
+	} fi
+
 
 	#mount -o bind "$_distro_source" "$_distro_root";
 	#mount -o remount,dev,exec,suid "$_distro_root";
@@ -61,6 +72,7 @@ function chroot::start() {
 		mkdir -p "$_distro_root/home/axon/Common";
 		mount --bind /data/linux/common "$_distro_root/home/axon/Common";
 	fi
+
 
 	# DNS
 	_resolv_conf="$_distro_root/etc/resolv.conf"
