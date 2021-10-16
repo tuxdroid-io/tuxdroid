@@ -103,13 +103,14 @@ function chroot::start() {
 					} done
 					# Note: No idea why XSDL spawns it's own xsel
 					#pkill -9 xsel;
-					{ CUSER=axon chroot::run_prog sh -i -c 'cd && chmod +x .xinitrc && exec $PWD/.xinitrc &' 2>&1; } > "$_distro_root$(user::get_home axon)/dbus.log" 2>&1;
+					#if test -e "$_distro_root/usr/bin/tmux"; then
+					CUSER=axon chroot::run_prog dtach -n /tmp/tuxdroid_x11.sock -Ez sh -c '{ cd && chmod +x .xinitrc && exec $PWD/.xinitrc 2>&1; } > /tmp/dbus.log 2>&1';
+
+					#{ CUSER=axon chroot::run_prog sh -i -c 'cd && chmod +x .xinitrc && exec $PWD/.xinitrc &' 2>&1; } > "$_distro_root$(user::get_home axon)/dbus.log" 2>&1;
 				;;
 				vnc)
 					log::info "Starting VNC";
-					{ CUSER=axon chroot::run_prog sh -i -c 'cd && chmod +x .xinitrc && exec vncserver :0 &' 2>&1; } > "$_distro_root$(user::get_home axon)/.vnc/server.log" 2>&1;
-
-
+					CUSER=axon chroot::run_prog dtach -n /tmp/tuxdroid_vnc.sock -Ez sh -c '{ cd && chmod +x .xinitrc && exec vncserver :0 2>&1; } > /tmp/vncserver.log 2>&1'
 			esac
 		} done 
 #	} else {

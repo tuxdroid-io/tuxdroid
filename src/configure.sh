@@ -73,6 +73,8 @@ function distro::configure() {
 		openssh
 		tigervnc
 		bash-completion
+		pcmanfm
+		yay
 	)
 	if test $DISTRIB == manjaro; then
 		ARCHLINUX_PACKAGES+=(manjaro-release);
@@ -86,6 +88,10 @@ function distro::configure() {
 	CUSER=root chroot::run_prog chmod -f 4755 /usr/share/code/chrome-sandbox;
 	CUSER=root chroot::run_prog setcap -r /usr/bin/gnome-keyring-daemon;
 
+	# Install external stuff
+	local _dtach_bin && _dtach_bin="$(command -v dtach)";
+	cat "$_dtach_bin" > "$_distro_root/usr/bin/dtach";
+	chmod 755 "$_distro_root/usr/bin/dtach";
 
     log::info "Configuring LOCALE";
 	echo 'en_US.UTF-8 UTF-8' > "$_distro_root/etc/locale.gen";
