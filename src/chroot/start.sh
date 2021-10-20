@@ -123,6 +123,27 @@ function chroot::start() {
 				vnc)
 					log::info "Starting VNC";
 					CUSER=axon chroot::run_prog dtach -n /tmp/tuxdroid_vnc.sock -Ez sh -c '{ cd && chmod +x .xinitrc && exec vncserver :0 2>&1; } > /tmp/vncserver.log 2>&1'
+
+				;;
+				fb)
+					log::info "Starting framebuffer";
+					sync; sync; sync;
+
+					log::info "Waiting for xinit a bit"; 
+					(sync; sync; sync) & sleep 5;
+
+					CUSER=root chroot::run_prog fbrefresh &
+					CUSER=axon chroot::run_prog dtach -n /tmp/xinit.sock -Ez sh -l -c 'exec xinit -- :0 -dpi 100 -sharevts vt0';
+					
+					log::info "Killing surfaceflinger";
+					sleep 5
+					setprop ctl.stop surfaceflinger;
+
+					while test -e "$_distro_root/tmp/xinit.sock"; do {
+						sleep 20;
+					} done
+					pkill -9 fbrefresh;
+					setprop ctl.start surfaceflinger;
 			esac
 		} done 
 #	} else {

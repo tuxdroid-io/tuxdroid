@@ -75,6 +75,10 @@ function distro::configure() {
 		bash-completion
 		pcmanfm
 		yay
+		mesa-demos
+		chromium
+		xf86-video-fbdev
+		xf86-input-evdev
 	)
 	if test $DISTRIB == manjaro; then
 		ARCHLINUX_PACKAGES+=(manjaro-release);
