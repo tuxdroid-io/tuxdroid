@@ -60,12 +60,12 @@ function chroot::start() {
 		} fi
 	} fi
 
-	if ! mountpoint -q "$_distro_root/tmp"; then {
+	#if ! mountpoint -q "$_distro_root/tmp"; then {
 		rm -rf "$_distro_root/tmp";
 		mkdir -m 0777 -p "$_distro_root/tmp";
-		mount -t tmpfs tmpfs -omode=0777,nosuid,nodev "$_distro_root/tmp";
+		#mount -t tmpfs tmpfs -omode=0777,nosuid,nodev "$_distro_root/tmp";
 		chmod +t "$_distro_root/tmp";
-	} fi
+	#} fi
 
 	# User mountpoints
 	if test -d "$_distro_root/home/axon"; then
@@ -83,6 +83,12 @@ function chroot::start() {
 	if ! grep -q "^127.0.0.1" "$_distro_root/etc/hosts"; then
 		echo '127.0.0.1 localhost' >> "${_distro_root}/etc/hosts";
 	fi
+
+	function dbus_daemon_start() {
+		log::info "Starting dbus system daemon";
+		rm -rf "$_distro_root/run/dbus" && mkdir -p -m 0755 "$_distro_root/run/dbus";
+		CUSER=root chroot::run_prog dbus-daemon --system --fork;
+	}
  
 	# Start chroot shell or components when specified
 	if test -n "${COMPONENTS:-}"; then {
@@ -107,6 +113,7 @@ function chroot::start() {
 					    chroot::run_prog sh -c '$(which sshd) -p 22';
 				    ;;
 			    	x11)
+					dbus_daemon_start;
 					log::info "Starting X11";
 					log::info "Waiting for X11 socket";
 					until ps -fA | grep -v grep | grep -q \
@@ -121,26 +128,46 @@ function chroot::start() {
 					#{ CUSER=axon chroot::run_prog sh -i -c 'cd && chmod +x .xinitrc && exec $PWD/.xinitrc &' 2>&1; } > "$_distro_root$(user::get_home axon)/dbus.log" 2>&1;
 				;;
 				vnc)
+					dbus_daemon_start;
 					log::info "Starting VNC";
 					CUSER=axon chroot::run_prog dtach -n /tmp/tuxdroid_vnc.sock -Ez sh -c '{ cd && chmod +x .xinitrc && exec vncserver :0 2>&1; } > /tmp/vncserver.log 2>&1'
 
 				;;
 				fb)
+					dbus_daemon_start;
 					log::info "Starting framebuffer";
 					sync; sync; sync;
 
-					log::info "Waiting for xinit a bit"; 
-					(sync; sync; sync) & sleep 5;
+					#log::info "Waiting for xinit a bit"; 
+					#(sync; sync; sync) & sleep 5;
 
-					CUSER=root chroot::run_prog fbrefresh &
-					CUSER=axon chroot::run_prog dtach -n /tmp/xinit.sock -Ez sh -l -c 'exec xinit -- :0 -dpi 100 -sharevts vt0';
+function fbref() {
+	local fbrotate=/sys/class/graphics/fb0/rotate;
+	local pid_file="$_distro_root/tmp/xsession.pid"
+        touch "${pid_file}"
+        chmod 666 "${pid_file}"
+        while [ -e "${pid_file}" ]
+        do
+            echo 0 > "${fbrotate}"
+            sleep 0.01
+        done
+}
+					true 'CUSER=root chroot::run_prog fbrefresh &'
+					fbref & read
+					true 'set +eETu;
+					(
+						exec {sleep_fd}<> <(:)
+						while echo 0 > /sys/class/graphics/fb0/rotate || true; do read -t 0.035 -u $sleep_fd; done
+					) & disown;'
+					CUSER=axon chroot::run_prog dtach -n /tmp/xinit.sock -Ez sh -l -c '{ xinit -- :0 -dpi 100 -sharevts vt0 2>&1; } >/tmp/xinit.log 2>&1';
+					#CUSER=axon chroot::run_prog sh -l -c 'xinit -- :0 -dpi 100 -sharevts vt0' &
 					
 					log::info "Killing surfaceflinger";
-					sleep 5
 					setprop ctl.stop surfaceflinger;
-
+					sleep 10
+					#setprop ctl.stop zygote
 					while test -e "$_distro_root/tmp/xinit.sock"; do {
-						sleep 20;
+						sleep 10;
 					} done
 					pkill -9 fbrefresh;
 					setprop ctl.start surfaceflinger;

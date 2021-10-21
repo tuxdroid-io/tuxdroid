@@ -79,6 +79,7 @@ function distro::configure() {
 		chromium
 		xf86-video-fbdev
 		xf86-input-evdev
+		xfce4
 	)
 	if test $DISTRIB == manjaro; then
 		ARCHLINUX_PACKAGES+=(manjaro-release);
