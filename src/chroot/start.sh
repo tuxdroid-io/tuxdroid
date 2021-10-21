@@ -137,40 +137,30 @@ function chroot::start() {
 					dbus_daemon_start;
 					log::info "Starting framebuffer";
 					sync; sync; sync;
+					(sync; sync; sync) & 
 
-					#log::info "Waiting for xinit a bit"; 
-					#(sync; sync; sync) & sleep 5;
+					log::info "Launching framebuffer vsync daemon";
+					local _fbrefresh_daemon;
+					set +eEuT;
+					(exec {sleep_fd}<> <(:); while echo 0 > /sys/class/graphics/fb0/rotate || true; do read -t 0.035 -u $sleep_fd; done) & _fbrefresh_daemon=$! && read; set -eEuT;
 
-function fbref() {
-	local fbrotate=/sys/class/graphics/fb0/rotate;
-	local pid_file="$_distro_root/tmp/xsession.pid"
-        touch "${pid_file}"
-        chmod 666 "${pid_file}"
-        while [ -e "${pid_file}" ]
-        do
-            echo 0 > "${fbrotate}"
-            sleep 0.01
-        done
-}
-					true 'CUSER=root chroot::run_prog fbrefresh &'
-					fbref & read
-					true 'set +eETu;
-					(
-						exec {sleep_fd}<> <(:)
-						while echo 0 > /sys/class/graphics/fb0/rotate || true; do read -t 0.035 -u $sleep_fd; done
-					) & disown;'
-					CUSER=axon chroot::run_prog dtach -n /tmp/xinit.sock -Ez sh -l -c '{ xinit -- :0 -dpi 100 -sharevts vt0 2>&1; } >/tmp/xinit.log 2>&1';
+					log::info "Launching Xorg xserver";
+					(CUSER=axon chroot::run_prog dtach -n /tmp/xinit.sock -Ez sh -l -i -c '{ xinit -- :0 -dpi 100 -sharevts vt0 2>&1; } >/tmp/xinit.log 2>&1') &
 					#CUSER=axon chroot::run_prog sh -l -c 'xinit -- :0 -dpi 100 -sharevts vt0' &
-					
+					read
 					log::info "Killing surfaceflinger";
-					setprop ctl.stop surfaceflinger;
-					sleep 10
+					#setprop ctl.stop surfaceflinger;
+					pkill -9 surfaceflinger;
+					until pkill -STOP surfaceflinger; do continue; done
+					pkill -STOP system_server;
+
 					#setprop ctl.stop zygote
 					while test -e "$_distro_root/tmp/xinit.sock"; do {
 						sleep 10;
 					} done
-					pkill -9 fbrefresh;
-					setprop ctl.start surfaceflinger;
+					#setprop ctl.start surfaceflinger;
+					pkill -CONT surfaceflinger;
+					pkill -CONT system_server;
 			esac
 		} done 
 #	} else {
