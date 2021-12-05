@@ -140,28 +140,45 @@ function chroot::start() {
 					(sync; sync; sync) & 
 
 					log::info "Launching framebuffer vsync daemon";
-					local _fbrefresh_daemon;
+					
 					set +eEuT;
-					(exec {sleep_fd}<> <(:); while echo 0 > /sys/class/graphics/fb0/rotate || true; do read -t 0.035 -u $sleep_fd; done) & _fbrefresh_daemon=$! && read; set -eEuT;
+					(exec {sleep_fd}<> <(:); while echo 0 > /sys/class/graphics/fb0/rotate || true; do 
+					read -t 0.030 -u $sleep_fd;
+					continue;
+				done) & export _fbrefresh_daemon=$! && disown && set -eEuT;
 
 					log::info "Launching Xorg xserver";
-					(CUSER=axon chroot::run_prog dtach -n /tmp/xinit.sock -Ez sh -l -i -c '{ xinit -- :0 -dpi 100 -sharevts vt0 2>&1; } >/tmp/xinit.log 2>&1') &
+					(CUSER=axon chroot::run_prog dtach -n /tmp/xinit.sock -Ez sh -l -i -c '{ cd && exec xinit -- :0 -dpi 100 -sharevts vt0 2>&1; } >/tmp/xinit.log 2>&1') &
 					#CUSER=axon chroot::run_prog sh -l -c 'xinit -- :0 -dpi 100 -sharevts vt0' &
-					read
 					log::info "Killing surfaceflinger";
-					#setprop ctl.stop surfaceflinger;
-					pkill -9 surfaceflinger;
-					until pkill -STOP surfaceflinger; do continue; done
+					(
+					_graphics_pids=$(ps -fA | grep -v grep | grep 'graphics' | awk '{print $2}');
+					#echo "$_graphics_pids" | xargs kill -STOP;
+					sleep 3;
+					pkill -STOP surfaceflinger;
+					sleep 3;
 					pkill -STOP system_server;
+					setprop ctl.stop surfaceflinger;
+					sleep 5;
+					#setprop ctl.stop system_server;
+					setprop ctl.stop zygote;
+					sleep 5;
+					pkill -CONT system_server;
 
-					#setprop ctl.stop zygote
 					while test -e "$_distro_root/tmp/xinit.sock"; do {
 						sleep 10;
+						#pkill -STOP surfaceflinger;
+						#pkill -STOP system_server;
 					} done
-					#setprop ctl.start surfaceflinger;
-					pkill -CONT surfaceflinger;
-					pkill -CONT system_server;
-			esac
+					setprop ctl.start zygote;
+					setprop ctl.start surfaceflinger;
+					#pkill -CONT surfaceflinger;
+					#pkill -CONT system_server;
+					#echo "$_graphics_pids" | xargs kill -CONT
+					kill -9 "$_fbrefresh_daemon";
+					
+				) & disown
+		esac
 		} done 
 #	} else {
 #		chroot::run_prog /bin/bash -l || true;

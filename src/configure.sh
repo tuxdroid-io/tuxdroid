@@ -38,7 +38,7 @@ function distro::configure() {
 	local ARCHLINUX_PACKAGES=(
 		sudo
 		xorg
-		xdg-utils
+		xdg-utils # For application protocols
 		#xdg-desktop-portal
 		gnome-keyring
 		python
@@ -80,6 +80,8 @@ function distro::configure() {
 		xf86-video-fbdev
 		xf86-input-evdev
 		xfce4
+		xfce4-netload-plugin
+		tmux
 	)
 	if test $DISTRIB == manjaro; then
 		ARCHLINUX_PACKAGES+=(manjaro-release);
