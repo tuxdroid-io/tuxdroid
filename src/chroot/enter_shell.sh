@@ -1,5 +1,4 @@
 use start;
-use box::user;
 use run_prog;
 function chroot::enter_shell() {
 

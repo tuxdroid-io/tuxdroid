@@ -1,4 +1,3 @@
-use box::mount;
 function chroot::stop() {
 	# Kill all running programs under chroot
 	local _chroot_pids _pid;

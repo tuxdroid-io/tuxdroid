@@ -1,4 +1,3 @@
-use box::user;
 function chroot::run_prog() {
 	local _chroot_path=":/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
 	local _user_id="0";

@@ -1,6 +1,3 @@
-use box::ensure;
-use box::mount;
-use box::user;
 use run_prog;
 use stop;
 
